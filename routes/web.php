@@ -155,6 +155,9 @@ Route::middleware(['auth', 'admin'])->group(function () {
         'destroy' => 'admin.announcements.destroy',
     ]);
 
+    Route::get('/admin/qr-scanner', [\App\Http\Controllers\QRScannerController::class, 'index'])
+        ->name('admin.qr_scanner');
+
 });
 
 // ======================================================
