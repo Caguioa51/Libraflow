@@ -158,6 +158,9 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/admin/qr-scanner', [\App\Http\Controllers\QRScannerController::class, 'index'])
         ->name('admin.qr_scanner');
 
+    Route::get('/admin/settings', [\App\Http\Controllers\SettingsController::class, 'index'])
+        ->name('admin.settings');
+
 });
 
 // ======================================================
