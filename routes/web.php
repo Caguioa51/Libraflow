@@ -121,6 +121,9 @@ Route::middleware(['auth', 'admin'])->group(function () {
     // SETTINGS
     // --------------------
     Route::get('/settings', [SettingsController::class, 'index'])->name('settings');
+
+    Route::get('/admin/users', [\App\Http\Controllers\UserController::class, 'index'])
+        ->name('admin.users.index');
 });
 
 // ======================================================
