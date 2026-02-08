@@ -1,20 +1,14 @@
-# Base PHP image with Composer
-FROM php:8.2-cli
+# Stage 1: Build stage
+FROM php:8.2-fpm AS build
 
-# Install system dependencies
+# Install dependencies
 RUN apt-get update && apt-get install -y \
-    git \
-    unzip \
-    libzip-dev \
-    curl \
-    nodejs \
-    npm \
+    git unzip libzip-dev curl npm nodejs \
     && docker-php-ext-install pdo_mysql zip
 
-# Copy Composer from official image
+# Install Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-# Set working directory
 WORKDIR /var/www/html
 
 # Copy project files
@@ -23,18 +17,23 @@ COPY . .
 # Install PHP dependencies
 RUN composer install --no-dev --optimize-autoloader
 
-# Install Node dependencies & build assets
+# Install Node dependencies and build assets
 RUN npm install && npm run build
 
 # Fix permissions
 RUN chmod -R 775 storage bootstrap/cache
 
-# Expose Laravel port
+# Stage 2: Production stage with PHP-FPM + Nginx
+FROM nginx:alpine
+
+# Copy built Laravel app from previous stage
+COPY --from=build /var/www/html /var/www/html
+
+# Copy Nginx config
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+# Expose port
 EXPOSE 8080
 
-# Start Laravel
-CMD php artisan migrate --force && \
-    php artisan config:cache && \
-    php artisan route:cache && \
-    php artisan view:cache && \
-    php artisan serve --host=0.0.0.0 --port=8080
+# Start Nginx and PHP-FPM
+CMD ["sh", "-c", "php-fpm -D && nginx -g 'daemon off;'"]
