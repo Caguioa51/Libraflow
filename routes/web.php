@@ -145,6 +145,16 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/borrowings/borrowed', [BorrowingController::class, 'borrowed'])
         ->name('borrowings.borrowed');
 
+    Route::resource('admin/announcements', AnnouncementController::class)->names([
+        'index' => 'admin.announcements.index',
+        'create' => 'admin.announcements.create',
+        'store' => 'admin.announcements.store',
+        'show' => 'admin.announcements.show',
+        'edit' => 'admin.announcements.edit',
+        'update' => 'admin.announcements.update',
+        'destroy' => 'admin.announcements.destroy',
+    ]);
+
 });
 
 // ======================================================
