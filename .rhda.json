@@ -1,0 +1,18 @@
+{
+  "exclude": [
+    "**/vendor/**",
+    "**/node_modules/**",
+    "**/storage/**",
+    "**/bootstrap/cache/**",
+    "**/vendor/**/package.json",
+    "**/node_modules/**/package.json",
+    "**/vendor/**/tests/**/package.json",
+    "**/vendor/**/src/**/package.json",
+    "**/vendor/**/**/package.json"
+  ],
+  "include": [
+    "package.json"
+  ],
+  "suppressTimestampInTelemetry": false,
+  "enableTelemetry": true
+}

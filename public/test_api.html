@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Books API</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .result { margin: 10px 0; padding: 10px; border: 1px solid #ccc; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+    </style>
+</head>
+<body>
+    <h1>Test Books API Endpoint</h1>
+    <button onclick="testAPI()">Test /api/books/available</button>
+    <div id="result"></div>
+    
+    <script>
+        function testAPI() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<div class="result">Testing API...</div>';
+            
+            fetch('/api/books/available')
+                .then(response => {
+                    console.log('Response status:', response.status);
+                    console.log('Response headers:', response.headers);
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('API Response:', data);
+                    
+                    if (data.success && data.books) {
+                        let html = '<div class="result success">';
+                        html += '<h3>✅ API Working!</h3>';
+                        html += '<p>Found ' + data.books.length + ' available books</p>';
+                        html += '<h4>Sample Books:</h4>';
+                        html += '<ul>';
+                        
+                        data.books.slice(0, 5).forEach(book => {
+                            html += '<li><strong>' + book.title + '</strong> by ' + book.author + ' (' + book.available_quantity + ' copies)</li>';
+                        });
+                        
+                        html += '</ul>';
+                        html += '<h4>Full Response:</h4>';
+                        html += '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+                        html += '</div>';
+                        resultDiv.innerHTML = html;
+                    } else {
+                        resultDiv.innerHTML = '<div class="result error">❌ API Error: ' + (data.message || 'Unknown error') + '</div>';
+                    }
+                })
+                .catch(error => {
+                    console.error('API Error:', error);
+                    resultDiv.innerHTML = '<div class="result error">❌ Network Error: ' + error.message + '</div>';
+                });
+        }
+        
+        // Auto-test on page load
+        window.onload = testAPI;
+    </script>
+</body>
+</html>

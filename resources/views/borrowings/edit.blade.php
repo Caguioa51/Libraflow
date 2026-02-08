@@ -1,0 +1,1 @@
+@php header('Location: ' . route('borrowings.index')); exit; @endphp 

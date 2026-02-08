@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Books API</title>
+</head>
+<body>
+    <h1>Test Books API</h1>
+    <div id="results"></div>
+    
+    <script>
+        fetch('/api/books/available')
+            .then(response => response.json())
+            .then(data => {
+                const results = document.getElementById('results');
+                if (data.success && data.books) {
+                    results.innerHTML = '<h2>Available Books:</h2><ul>' + 
+                        data.books.map(book => 
+                            `<li><strong>${book.title}</strong> by ${book.author} (${book.available_quantity} copies)</li>`
+                        ).join('') + '</ul>';
+                } else {
+                    results.innerHTML = '<p>No books found or error occurred</p>';
+                }
+            })
+            .catch(error => {
+                document.getElementById('results').innerHTML = '<p>Error: ' + error.message + '</p>';
+            });
+    </script>
+</body>
+</html>

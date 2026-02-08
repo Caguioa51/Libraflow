@@ -1,0 +1,387 @@
+@extends('layouts.app')
+
+@section('content')
+<div class="container-fluid mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-xl-6">
+            <!-- Header -->
+            <div class="mb-4">
+                <h2 class="mb-1"><i class="bi bi-person-plus text-primary me-2"></i>Borrow for Student</h2>
+                <p class="text-muted mb-0">Find a student to borrow books for them</p>
+            </div>
+
+            <!-- Student Search Section -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-search me-2"></i>Find Student</h5>
+                </div>
+                <div class="card-body">
+                    <!-- Automatic RFID Scan -->
+                    <div class="mb-4">
+                        <div class="alert alert-success">
+                            <i class="bi bi-wifi me-2"></i>
+                            <strong>Auto RFID Scanner Active!</strong> Simply scan RFID card - automatic lookup
+                        </div>
+
+                        <div class="input-group">
+                            <input type="text" class="form-control form-control-lg" id="rfid-input"
+                                   placeholder="📡 SCAN RFID CARD HERE - Auto Lookup Active"
+                                   autocomplete="off" autofocus
+                                   style="border: 2px solid #28a745; background-color: #f8fff9;">
+                            <button class="btn btn-success" type="button" id="clear-rfid-btn">
+                                <i class="bi bi-arrow-clockwise"></i> Clear
+                            </button>
+                        </div>
+                        <div id="rfid-feedback" class="mt-2"></div>
+
+                        <div id="scan-status" class="mt-2">
+                            <small class="text-success">
+                                <i class="bi bi-circle-fill text-success me-1"></i>
+                                <strong>SCANNER READY - Waiting for RFID card...</strong>
+                            </small>
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <!-- Manual Search -->
+                    <div class="mb-4">
+                        <h6 class="text-muted">Manual Search</h6>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="manual-search-input"
+                                   placeholder="Enter student name, email, or ID..." autocomplete="off">
+                            <button class="btn btn-info" type="button" id="manual-search-btn">
+                                <i class="bi bi-search me-2"></i>Search
+                            </button>
+                        </div>
+                        <div id="manual-search-feedback" class="mt-2"></div>
+                    </div>
+
+                    @if(session('success'))
+                        <div class="alert alert-success">
+                            <i class="bi bi-check-circle me-2"></i>{{ session('success') }}
+                        </div>
+                    @endif
+
+                    @if(session('error'))
+                        <div class="alert alert-danger">
+                            <i class="bi bi-exclamation-triangle me-2"></i>{{ session('error') }}
+                        </div>
+                    @endif
+
+                    @if($selectedUser)
+                        <!-- Student Found - Show Borrowing Interface -->
+                        <div class="card mt-4 border-success">
+                            <div class="card-header bg-success text-white">
+                                <h5 class="mb-0"><i class="bi bi-person-check me-2"></i>Student Selected</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row align-items-center">
+                                    <div class="col-md-3 text-center">
+                                        <img src="{{ $selectedUser->profile_photo_url }}" alt="Profile" class="rounded-circle mb-2" width="80" height="80">
+                                        <h6 class="mb-0">{{ $selectedUser->name }}</h6>
+                                        <small class="text-muted">{{ ucfirst($selectedUser->role) }}</small>
+                                    </div>
+                                    <div class="col-md-9">
+                                        <div class="row">
+                                            <div class="col-sm-6">
+                                                <p class="mb-1"><strong>Email:</strong></p>
+                                                <p class="mb-3">{{ $selectedUser->email }}</p>
+                                            </div>
+                                            <div class="col-sm-6">
+                                                <p class="mb-1"><strong>Student ID:</strong></p>
+                                                <p class="mb-3">{{ $selectedUser->student_id ?? 'N/A' }}</p>
+                                            </div>
+                                        </div>
+                                        <div class="mt-2">
+                                            <button type="button" class="btn btn-success" id="borrow-books-btn">
+                                                <i class="bi bi-book me-2"></i>Borrow Books for {{ $selectedUser->name }}
+                                            </button>
+                                            <a href="{{ route('borrowings.admin_borrow') }}" class="btn btn-outline-secondary">
+                                                <i class="bi bi-arrow-repeat me-2"></i>Find Different Student
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Book Selection Form (Initially Hidden) -->
+                        <div id="book-selection-section" class="card mt-4" style="display: none;">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="mb-0"><i class="bi bi-books me-2"></i>Select Books to Borrow</h5>
+                            </div>
+                            <div class="card-body">
+                                <form method="POST" action="{{ route('borrowings.store') }}" id="borrow-book-form">
+                                    @csrf
+                                    <input type="hidden" name="user_id" value="{{ $selectedUser->id }}" id="borrow_user_id">
+
+                                    <div class="row">
+                                        <div class="col-md-8">
+                                            <label for="book_select" class="form-label">Select Book</label>
+                                            <select class="form-select" name="book_id" id="book_select" required>
+                                                <option value="">Choose a book...</option>
+                                                @foreach($books as $book)
+                                                    <option value="{{ $book->id }}">
+                                                        {{ $book->title }} by {{ $book->author->name ?? 'Unknown' }}
+                                                        (Available: {{ $book->available_quantity ?? ($book->quantity ?? 1) }})
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label">&nbsp;</label>
+                                            <button type="submit" class="btn btn-success d-block w-100">
+                                                <i class="bi bi-check-circle me-2"></i>Borrow Book
+                                            </button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    @endif
+
+                    <!-- Instructions -->
+                    <div class="alert alert-info mt-4">
+                        <h6><i class="bi bi-info-circle me-2"></i>How to use:</h6>
+                        <ol class="mb-0">
+                            <li><strong>RFID Scan:</strong> Simply scan RFID card - automatic lookup (no button needed)</li>
+                            <li><strong>Manual Search:</strong> Enter student's name, email, or student ID and click Search</li>
+                            <li>Student information will be displayed if found</li>
+                            <li>Click "Borrow Books" to proceed</li>
+                            <li>Select a book from the dropdown and click "Borrow Book"</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Automatic RFID Scanner + Manual Search
+document.addEventListener('DOMContentLoaded', function() {
+    // Borrow Books button click handler
+    const borrowBtn = document.getElementById('borrow-books-btn');
+    if (borrowBtn) {
+        borrowBtn.addEventListener('click', function() {
+            const bookSelectionSection = document.getElementById('book-selection-section');
+            if (bookSelectionSection) {
+                bookSelectionSection.style.display = 'block';
+                bookSelectionSection.scrollIntoView({ behavior: 'smooth' });
+            }
+        });
+    }
+
+    // === AUTOMATIC RFID SCANNING ===
+    const rfidInput = document.getElementById('rfid-input');
+    const clearRfidBtn = document.getElementById('clear-rfid-btn');
+    const rfidFeedback = document.getElementById('rfid-feedback');
+    const scanStatus = document.getElementById('scan-status');
+
+    let rfidAutoSubmitTimer = null;
+    let lastRfidValue = '';
+
+    function showRfidFeedback(message, type = 'info') {
+        rfidFeedback.innerHTML = `<div class="alert alert-${type} alert-sm"><i class="bi bi-info-circle me-2"></i>${message}</div>`;
+    }
+
+    function updateScanStatus(message, type = 'success') {
+        const icons = {
+            success: 'text-success',
+            warning: 'text-warning',
+            danger: 'text-danger',
+            info: 'text-info'
+        };
+
+        const iconClass = icons[type] || icons.success;
+        scanStatus.innerHTML = `<small class="${iconClass}"><i class="bi bi-circle-fill ${iconClass} me-1"></i><strong>${message}</strong></small>`;
+    }
+
+    function clearRfidFeedback() {
+        rfidFeedback.innerHTML = '';
+    }
+
+    async function searchByRfid(rfidValue) {
+        clearRfidFeedback();
+
+        if (!rfidValue.trim()) {
+            showRfidFeedback('Please enter or scan a RFID value.', 'warning');
+            return;
+        }
+
+        updateScanStatus('Searching for student...', 'warning');
+        showRfidFeedback('Searching for student...', 'info');
+
+        try {
+            const response = await fetch('{{ route("borrowings.admin_barcode_lookup") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                },
+                body: JSON.stringify({
+                    barcode: rfidValue.trim()
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                showRfidFeedback(`✅ Student found: ${data.user.name}. Redirecting...`, 'success');
+                updateScanStatus(`✅ Student found: ${data.user.name}`, 'success');
+
+                // Redirect to borrowing page with the found user
+                setTimeout(() => {
+                    window.location.href = `{{ route('borrowings.admin_borrow') }}?user_id=${data.user.id}`;
+                }, 1000);
+            } else {
+                showRfidFeedback(`❌ ${data.message || 'No student found with this RFID card.'}`, 'danger');
+                updateScanStatus('❌ Student not found', 'danger');
+            }
+        } catch (error) {
+            console.error('RFID Search Error:', error);
+            showRfidFeedback('❌ An error occurred while searching. Please try again.', 'danger');
+            updateScanStatus('❌ Search failed', 'danger');
+        }
+    }
+
+    // RFID Input handler with auto-scan
+    if (rfidInput) {
+        rfidInput.addEventListener('input', function() {
+            const value = this.value.trim();
+
+            // Don't process if same as last processed
+            if (value === lastRfidValue) return;
+            lastRfidValue = value;
+
+            updateScanStatus(`Scanning RFID: ${value} (${value.length} chars)`, 'warning');
+
+            // Clear previous timer
+            if (rfidAutoSubmitTimer) {
+                clearTimeout(rfidAutoSubmitTimer);
+            }
+
+            // Auto-submit if we have enough characters
+            if (value.length >= 3) {
+                rfidAutoSubmitTimer = setTimeout(() => {
+                    if (rfidInput.value.trim() === value) {
+                        searchByRfid(value);
+                    }
+                }, 500); // Fast 500ms response
+            }
+
+            // Show progress for short inputs
+            if (value.length > 0 && value.length < 3) {
+                updateScanStatus(`Scanning... (${value.length} characters)`, 'info');
+            }
+        });
+
+        // Clear RFID input
+        if (clearRfidBtn) {
+            clearRfidBtn.addEventListener('click', function() {
+                rfidInput.value = '';
+                lastRfidValue = '';
+                clearRfidFeedback();
+                updateScanStatus('SCANNER READY - Waiting for RFID card...', 'success');
+                rfidInput.focus();
+            });
+        }
+
+        // Enter key handler
+        rfidInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                searchByRfid(this.value);
+            }
+        });
+
+        // Auto-focus RFID input
+        rfidInput.focus();
+    }
+
+    // === MANUAL SEARCH ===
+    const manualSearchInput = document.getElementById('manual-search-input');
+    const manualSearchBtn = document.getElementById('manual-search-btn');
+    const manualSearchFeedback = document.getElementById('manual-search-feedback');
+
+    function showManualSearchFeedback(message, type = 'info') {
+        manualSearchFeedback.innerHTML = `<div class="alert alert-${type} alert-sm"><i class="bi bi-info-circle me-2"></i>${message}</div>`;
+    }
+
+    async function searchManually(searchQuery) {
+        if (!searchQuery.trim()) {
+            showManualSearchFeedback('Please enter a search term.', 'warning');
+            return;
+        }
+
+        showManualSearchFeedback('Searching for student...', 'info');
+        manualSearchBtn.disabled = true;
+        manualSearchBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Searching...';
+
+        try {
+            const response = await fetch('{{ route("borrowings.admin_user_search") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                },
+                body: JSON.stringify({
+                    q: searchQuery.trim()
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.id) {
+                // Single student found
+                showManualSearchFeedback(`✅ Student found: ${data.name}. Redirecting...`, 'success');
+                setTimeout(() => {
+                    window.location.href = `{{ route('borrowings.admin_borrow') }}?user_id=${data.id}`;
+                }, 1000);
+            } else if (data.multiple) {
+                // Multiple students found - show selection
+                let usersHtml = '<div class="alert alert-info"><strong>Multiple students found:</strong><br>';
+                data.users.forEach(user => {
+                    usersHtml += `<button type="button" class="btn btn-sm btn-outline-primary me-2 mb-2"
+                                  onclick="selectUser('${user.id}', '${user.name}')">${user.name} (${user.email})</button>`;
+                });
+                usersHtml += '</div>';
+                manualSearchFeedback.innerHTML = usersHtml;
+            } else {
+                showManualSearchFeedback('❌ No students found matching your search.', 'danger');
+            }
+        } catch (error) {
+            console.error('Manual Search Error:', error);
+            showManualSearchFeedback('❌ An error occurred while searching. Please try again.', 'danger');
+        } finally {
+            manualSearchBtn.disabled = false;
+            manualSearchBtn.innerHTML = '<i class="bi bi-search me-2"></i>Search';
+        }
+    }
+
+    // Manual search button handler
+    if (manualSearchBtn && manualSearchInput) {
+        manualSearchBtn.addEventListener('click', function() {
+            searchManually(manualSearchInput.value);
+        });
+
+        // Enter key handler for manual search
+        manualSearchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                searchManually(this.value);
+            }
+        });
+    }
+
+    // Global function for user selection
+    window.selectUser = function(userId, userName) {
+        showManualSearchFeedback(`✅ Selected: ${userName}. Redirecting...`, 'success');
+        setTimeout(() => {
+            window.location.href = `{{ route('borrowings.admin_borrow') }}?user_id=${userId}`;
+        }, 500);
+    };
+});
+</script>
+@endsection
