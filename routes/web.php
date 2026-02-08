@@ -163,6 +163,9 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/admin/settings', [\App\Http\Controllers\SettingsController::class, 'index'])
         ->name('admin.settings');
 
+    Route::get('/books/create', [BookController::class, 'create'])->name('books.create');
+    Route::post('/books', [BookController::class, 'store'])->name('books.store');
+
 });
 
 // ======================================================
