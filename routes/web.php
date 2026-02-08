@@ -135,6 +135,16 @@ Route::middleware(['auth', 'admin'])->group(function () {
         'update' => 'admin.users.update',
         'destroy' => 'admin.users.destroy',
     ]);
+
+    Route::get('/admin/users/approvals', [UserController::class, 'approvals'])
+        ->name('admin.users.approvals');
+
+    // --------------------
+    // Borrowed books
+    // --------------------
+    Route::get('/borrowings/borrowed', [BorrowingController::class, 'borrowed'])
+        ->name('borrowings.borrowed');
+
 });
 
 // ======================================================
