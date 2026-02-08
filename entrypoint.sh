@@ -5,7 +5,9 @@ set -e
 chmod -R 775 storage bootstrap/cache
 
 # Wait for DB to be ready before migrating
-until php artisan migrate --force; do
+until php artisan migrate --force
+php artisan db:seed --force
+; do
     echo "Waiting for database..."
     sleep 3
 done
