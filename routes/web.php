@@ -9,7 +9,8 @@ use App\Http\Controllers\{
     AuthorController,
     BorrowingController,
     BorrowingRequestController,
-    SettingsController
+    SettingsController,
+    UserController
 };
 
 // ======================================================
@@ -57,7 +58,7 @@ Route::middleware('auth')->group(function () {
         ->name('books.request_borrow');
 
     // --------------------
-    // USER BORROWING REQUESTS (SAFE)
+    // USER BORROWING REQUESTS
     // --------------------
     Route::get('/borrowing-requests', [BorrowingRequestController::class, 'index'])
         ->name('borrowing-requests.index');
@@ -81,7 +82,7 @@ Route::middleware('auth')->group(function () {
 });
 
 // ======================================================
-// ADMIN ROUTES (NO DUPLICATE DESTROY)
+// ADMIN ROUTES
 // ======================================================
 
 Route::middleware(['auth', 'admin'])->group(function () {
@@ -90,7 +91,6 @@ Route::middleware(['auth', 'admin'])->group(function () {
     // BOOK MANAGEMENT
     // --------------------
     Route::resource('books', BookController::class)->except(['index', 'show', 'create']);
-
     Route::resource('categories', CategoryController::class);
     Route::resource('authors', AuthorController::class);
 
@@ -98,21 +98,22 @@ Route::middleware(['auth', 'admin'])->group(function () {
     // BORROWINGS
     // --------------------
     Route::resource('borrowings', BorrowingController::class)->except(['store']);
-
     Route::patch('/borrowings/{borrowing}/return',
         [BorrowingController::class, 'update'])
         ->name('borrowings.return');
+
+    // Borrowed books (dashboard "View All" link)
+    Route::get('/borrowings/borrowed', [BorrowingController::class, 'borrowed'])
+        ->name('borrowings.borrowed');
 
     // --------------------
     // BORROWING REQUESTS (ADMIN – NO destroy)
     // --------------------
     Route::resource('borrowing-requests', BorrowingRequestController::class)
         ->except(['index', 'destroy']);
-
     Route::post('/borrowing-requests/{borrowingRequest}/approve',
         [BorrowingRequestController::class, 'approve'])
         ->name('borrowing-requests.approve');
-
     Route::post('/borrowing-requests/{borrowingRequest}/reject',
         [BorrowingRequestController::class, 'reject'])
         ->name('borrowing-requests.reject');
@@ -122,8 +123,10 @@ Route::middleware(['auth', 'admin'])->group(function () {
     // --------------------
     Route::get('/settings', [SettingsController::class, 'index'])->name('settings');
 
-    Route::get('/admin/users', [\App\Http\Controllers\UserController::class, 'index'])
-        ->name('admin.users.index');
+    // --------------------
+    // USER MANAGEMENT
+    // --------------------
+    Route::resource('admin/users', UserController::class);
 });
 
 // ======================================================
