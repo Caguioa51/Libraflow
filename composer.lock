@@ -21,7 +21,9 @@
                 "shasum": ""
             },
             "require": {
-                "php": "^8.2"
+                "php": "^8.2",
+                "fakerphp/faker": "^1.23",
+
             },
             "require-dev": {
                 "php-coveralls/php-coveralls": "^2.2",
