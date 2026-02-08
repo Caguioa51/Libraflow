@@ -19,18 +19,15 @@ WORKDIR /app
 # Copy project files
 COPY . .
 
-# Install dependencies
+# Install PHP and Node dependencies
 RUN composer install --no-dev --optimize-autoloader
 RUN npm install && npm run build
 
 # Fix permissions
 RUN chmod -R 775 storage bootstrap/cache
 
-# Run migrations and cache config
-RUN php artisan migrate --force
-RUN php artisan config:cache
-RUN php artisan route:cache
-RUN php artisan view:cache
+# Copy .env.example to .env if missing
+RUN if [ ! -f .env ]; then cp .env.example .env; fi
 
-# Start Laravel built-in server on Railway's port
+# Runtime command: start Laravel on Railway's port
 CMD php -S 0.0.0.0:$PORT -t public
