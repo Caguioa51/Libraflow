@@ -5,13 +5,12 @@ chmod -R 775 storage bootstrap/cache
 
 echo "Waiting for database..."
 
-until php artisan migrate --force; do
-  echo "Database not ready, retrying in 3s..."
-  sleep 3
+until php artisan migrate:status; do
+    echo "Waiting for database..."
+    sleep 2
 done
+php artisan migrate --seed --force
 
-# ✅ Seed ONCE only
-php artisan db:seed --force || true
 
 php artisan config:clear
 php artisan config:cache
